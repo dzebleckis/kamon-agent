@@ -3,14 +3,14 @@ package kamon.spring.instrumentation.advisor
 import javax.servlet.http.{ HttpServletRequest, HttpServletResponse }
 
 import kamon.Kamon
-import kamon.agent.libs.net.bytebuddy.asm.Advice.{Argument, OnMethodEnter, OnMethodExit}
+import kamon.agent.libs.net.bytebuddy.asm.Advice.{ Argument, OnMethodEnter, OnMethodExit }
 import kamon.spring.SpringExtension
 import kamon.spring.instrumentation.mixin.TraceContextAwareExtension
 import kamon.trace.Tracer
 
 /**
-  * Advisor for org.springframework.web.servlet.DispatcherServlet::doDispatch
-  */
+ * Advisor for org.springframework.web.servlet.DispatcherServlet::doDispatch
+ */
 class DoDispatchMethodAdvisor
 object DoDispatchMethodAdvisor {
   @OnMethodEnter

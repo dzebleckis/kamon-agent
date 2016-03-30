@@ -42,6 +42,8 @@ object Dependencies {
   val jettyServlet      = "org.eclipse.jetty"         % "jetty-servlet"     % "9.3.8.v20160314"
   val httpClient        = "org.apache.httpcomponents" % "httpclient"        % "4.5.2"
 
+  val springCore        = "org.springframework"       % "spring-core"       % "4.2.5.RELEASE" exclude("commons-logging", "commons-logging")
+  val springMVC         = "org.springframework"       % "spring-webmvc"     % "4.2.5.RELEASE"
 
   val kamonAgent      = "io.kamon"          % "agent_2.11"        % "0.1-SNAPSHOT" classifier "assembly"
 

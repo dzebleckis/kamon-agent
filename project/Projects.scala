@@ -86,14 +86,14 @@ object Projects extends Build {
 
   //should be moved to Kamon repo
   lazy val kamonSpring = Project("kamon-spring",file("kamon-spring"))
-    .dependsOn(agentScala)
+    .dependsOn(agentScala, kamonServlet)
     .settings(basicSettings: _*)
     .settings(formatSettings: _*)
     .settings(agentSettings: _*)
     .settings(libraryDependencies ++=
       compile(kamonCore, servletApi) ++
       provided(javaslang, typesafeConfig, slf4jApi, kamonAgent) ++
-      test(scalatest, mockito, springTest, springWeb, httpClient))
+      test(scalatest, mockito, springTest, springWeb, springCore, springMVC, jetty, jettyServlet, httpClient))
     .settings(excludeScalaLib: _*)
     .settings(noPublishing: _*)
     .settings(notAggregateInAssembly: _*)

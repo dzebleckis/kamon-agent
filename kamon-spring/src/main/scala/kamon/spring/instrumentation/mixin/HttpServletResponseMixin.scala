@@ -3,8 +3,8 @@ package kamon.spring.instrumentation.mixin
 import kamon.trace.TraceContext
 
 /**
-  * Mixin for javax.servlet.http.HttpServletResponse
-  */
+ * Mixin for javax.servlet.http.HttpServletResponse
+ */
 class HttpServletResponseMixin extends TraceContextAwareExtension {
   @volatile private var _traceContext: TraceContext = _
 

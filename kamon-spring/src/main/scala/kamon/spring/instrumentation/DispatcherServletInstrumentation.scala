@@ -12,19 +12,19 @@ import kamon.spring.instrumentation.mixin.HttpServletResponseMixin
 class DispatcherServletInstrumentation extends KamonInstrumentation {
 
   /**
-    * org.springframework.web.servlet.DispatcherServlet.doDispatch
-    */
+   * org.springframework.web.servlet.DispatcherServlet.doDispatch
+   */
   val doDispatchMethod: Junction[MethodDescription] = named("doDispatch")
     .and(takesArguments[MethodDescription](classOf[HttpServletRequest], classOf[HttpServletResponse]))
     .and(not(isAbstract()))
 
-  forSubtypeOf("org.springframework.web.servlet.DispatcherServlet") { builder =>
+  forSubtypeOf("org.springframework.web.servlet.DispatcherServlet") { builder ⇒
     builder
       .withAdvisorFor(doDispatchMethod, classOf[DoDispatchMethodAdvisor])
       .build()
   }
 
-  forSubtypeOf("javax.servlet.http.HttpServletResponse") { builder =>
+  forSubtypeOf("javax.servlet.http.HttpServletResponse") { builder ⇒
     builder
       .withMixin(classOf[HttpServletResponseMixin])
       .build()
