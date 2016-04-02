@@ -45,6 +45,10 @@ object Dependencies {
   val springCore        = "org.springframework"       % "spring-core"       % "4.2.5.RELEASE" exclude("commons-logging", "commons-logging")
   val springMVC         = "org.springframework"       % "spring-webmvc"     % "4.2.5.RELEASE"
 
+  val springBootStarterTest = "org.springframework.boot"  % "spring-boot-starter-test" % "1.3.3.RELEASE"
+  val springBootStarterRest = "org.springframework.boot"  % "spring-boot-starter-data-rest" % "1.3.3.RELEASE"
+  val springBootStarterJetty = "org.springframework.boot"  % "spring-boot-starter-jetty" % "1.3.3.RELEASE"
+
   val kamonAgent      = "io.kamon"          % "agent_2.11"        % "0.1-SNAPSHOT" classifier "assembly"
 
   def compile   (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
