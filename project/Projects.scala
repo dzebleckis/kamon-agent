@@ -93,7 +93,7 @@ object Projects extends Build {
     .settings(libraryDependencies ++=
       compile(kamonCore, servletApi) ++
       provided(javaslang, typesafeConfig, slf4jApi, kamonAgent) ++
-      test(scalatest, mockito, springTest, springWeb, springCore, springMVC, /* springBootStarterRest, springBootStarterJetty, springBootStarterTest, */ jetty, jettyServlet, httpClient))
+      test(scalatest, mockito, springCore, springMVC, jetty, jettyServlet, httpClient))
     .settings(excludeScalaLib: _*)
     .settings(noPublishing: _*)
     .settings(notAggregateInAssembly: _*)
