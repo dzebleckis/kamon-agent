@@ -1,3 +1,19 @@
+/*
+ * =========================================================================================
+ * Copyright © 2013-2016 the kamon project <http://kamon.io/>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
+ * =========================================================================================
+ */
+
 package kamon.agent.api.instrumentation;
 
 import javaslang.Function3;
@@ -14,6 +30,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
+import static net.bytebuddy.matcher.ElementMatchers.*;
+
+
 public class InstrumentationDescription {
     private final Option<ElementMatcher<? super TypeDescription>> elementMatcher;
     private final List<MixinDescription> mixins;
@@ -27,19 +46,19 @@ public class InstrumentationDescription {
         this.transformers = builder.transformers;
     }
 
-    public Option<ElementMatcher<? super TypeDescription>> elementMatcher() {
+    Option<ElementMatcher<? super TypeDescription>> elementMatcher() {
         return elementMatcher;
     }
 
-    public List<MixinDescription> mixins() {
+    List<MixinDescription> mixins() {
         return mixins;
     }
 
-    public List<AdvisorDescription> interceptors() {
+    List<AdvisorDescription> interceptors() {
         return interceptors;
     }
 
-    public List<AgentBuilder.Transformer> transformers() {
+    List<AgentBuilder.Transformer> transformers() {
         return transformers;
     }
 
@@ -50,7 +69,7 @@ public class InstrumentationDescription {
         private List<AgentBuilder.Transformer> transformers = new ArrayList<>();
 
 
-        public Builder addElementMatcher(Supplier<ElementMatcher<? super TypeDescription>> f) {
+        Builder addElementMatcher(Supplier<ElementMatcher<? super TypeDescription>> f) {
             elementMatcher = Option.of(f.get());
             return this;
         }
@@ -61,7 +80,7 @@ public class InstrumentationDescription {
         }
 
         public Builder withAdvisorFor(ElementMatcher.Junction<MethodDescription> methodDescription , Supplier<Class<?>> classSupplier) {
-            interceptors.add(new AdvisorDescription(methodDescription, classSupplier.get()));
+            interceptors.add(AdvisorDescription.of(methodDescription.and(defaultMethodElementMatcher()), classSupplier.get()));
             return this;
         }
 
@@ -74,6 +93,13 @@ public class InstrumentationDescription {
 
         public InstrumentationDescription build() {
             return new InstrumentationDescription(this);
+        }
+
+        private ElementMatcher.Junction<MethodDescription> defaultMethodElementMatcher() {
+            return not(isAbstract())
+                    .and(not(isNative()))
+                    .and(not(isSynthetic()))
+                    .and(not(isTypeInitializer()));
         }
     }
 }

@@ -1,22 +1,38 @@
+/*
+ * =========================================================================================
+ * Copyright © 2013-2016 the kamon project <http://kamon.io/>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
+ * =========================================================================================
+ */
+
 package kamon.agent.api.instrumentation;
 
 import javaslang.Function1;
-import kamon.agent.api.instrumentation.listener.InstrumentationListener;
-import kamon.agent.api.instrumentation.mixin.MixinClassVisitorWrapper;
+import kamon.agent.api.advisor.AdvisorDescription;
+import kamon.agent.api.instrumentation.mixin.MixinDescription;
+import lombok.val;
 import net.bytebuddy.agent.builder.AgentBuilder;
-import net.bytebuddy.agent.builder.AgentBuilder.Identified;
-import net.bytebuddy.asm.Advice;
-import net.bytebuddy.asm.AsmVisitorWrapper.ForDeclaredMethods;
 import net.bytebuddy.description.ByteCodeElement;
 import net.bytebuddy.description.method.MethodDescription;
-import net.bytebuddy.jar.asm.ClassWriter;
+import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.matcher.ElementMatcher;
 import net.bytebuddy.pool.TypePool;
 
-import java.lang.instrument.Instrumentation;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static net.bytebuddy.matcher.ElementMatchers.*;
 
@@ -27,47 +43,46 @@ public abstract class KamonInstrumentation {
     protected final ElementMatcher.Junction<ByteCodeElement> NotDeclaredByObject = not(isDeclaredBy(Object.class));
     protected final ElementMatcher.Junction<MethodDescription> TakesArguments = not(takesArguments(0));
 
-    public void register(Instrumentation instrumentation) {
-        final AgentBuilder agentBuilder = new AgentBuilder.Default().with(new InstrumentationListener());
-        instrumentationDescriptions.forEach((instrumentationDescription) -> installInstrumentations(agentBuilder, instrumentationDescription, instrumentation));
+    public List<TypeTransformation> collectTransformations() {
+        return instrumentationDescriptions.stream()
+                .map(this::buildTransformations)
+                .collect(Collectors.toList());
     }
 
-    private void installInstrumentations(AgentBuilder agentBuilder, InstrumentationDescription instrumentationDescription, Instrumentation instrumentation) {
-        final Identified identified = agentBuilder.type(instrumentationDescription.elementMatcher().getOrElseThrow(() -> new RuntimeException("There must be an element selected by elementMatcher")));
+    private TypeTransformation buildTransformations(InstrumentationDescription instrumentationDescription) {
+        val mixins = collect(instrumentationDescription.mixins(), MixinDescription::makeTransformer);
+        val advisors = collect(instrumentationDescription.interceptors(), AdvisorDescription::makeTransformer);
+        val transformers = collect(instrumentationDescription.transformers(), Function.identity());
+        return TypeTransformation.of(instrumentationDescription.elementMatcher(), mixins, advisors, transformers);
+    }
 
-        instrumentationDescription.mixins().forEach(mixin ->
-                identified.transform((builder, typeDescription, classLoader) -> builder.visit(new MixinClassVisitorWrapper(mixin))).installOn(instrumentation));
-
-        instrumentationDescription.interceptors().forEach(interceptor -> identified.transform((builder, typeDescription, classLoader) ->
-                builder.visit(new ForDeclaredMethods().writerFlags(ClassWriter.COMPUTE_FRAMES).method(interceptor.getMethodMatcher(), Advice.to(interceptor.getInterceptorClass())))).installOn(instrumentation));
-
-        instrumentationDescription.transformers().forEach(transformer -> identified.transform(transformer).installOn(instrumentation));
+    private <T> Set<AgentBuilder.Transformer> collect(List<T> transformerList, Function<T, AgentBuilder.Transformer> f) {
+        return transformerList.stream()
+                .map(f)
+                .collect(Collectors.toSet());
     }
 
     public void forTargetType(Supplier<String> f, Function1<InstrumentationDescription.Builder, InstrumentationDescription> instrumentationFunction) {
-        InstrumentationDescription.Builder builder = new InstrumentationDescription.Builder();
-        builder.addElementMatcher(() -> named(f.get()));
+        val builder = new InstrumentationDescription.Builder();
+        builder.addElementMatcher(() -> defaultTypeMatcher().and(named(f.get())));
         instrumentationDescriptions.add(instrumentationFunction.apply(builder));
     }
 
     public void forSubtypeOf(Supplier<String> f, Function1<InstrumentationDescription.Builder, InstrumentationDescription> instrumentationFunction) {
-        InstrumentationDescription.Builder builder = new InstrumentationDescription.Builder();
-        builder.addElementMatcher(() -> isSubTypeOf(typePool.describe(f.get()).resolve()).and(not(isInterface())));
+        val builder = new InstrumentationDescription.Builder();
+        builder.addElementMatcher(() -> defaultTypeMatcher().and(isSubTypeOf(typePool.describe(f.get()).resolve())));
         instrumentationDescriptions.add(instrumentationFunction.apply(builder));
     }
 
+    private ElementMatcher.Junction<TypeDescription> defaultTypeMatcher() {
+        return  failSafe(not(isInterface()).and(not(isSynthetic())));
+    }
 
-    //    public void forSubtypeOf(Supplier<String> f){
-//        forType(() -> isSubTypeOf(typePool.describe(f.get()).resolve()).and(not(isInterface())));
-//    }
+    public boolean isActive() {
+        return true;
+    }
 
-    //    public void forTypes(Supplier<ElementMatcher<? super TypeDescription>> f) { instrumentationDescription.elementMatcher = Option.of(f.get());}
-
-//    public void forType(Supplier<ElementMatcher<? super TypeDescription>> f) {forTypes(f);}
-
-//    public void forTargetType(Supplier<String> f) {
-//        forType((() -> named(f.get())));
-//    }
-
-
+    public int order() {
+        return 1;
+    }
 }

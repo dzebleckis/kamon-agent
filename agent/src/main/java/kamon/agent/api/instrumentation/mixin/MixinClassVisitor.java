@@ -1,7 +1,23 @@
+/*
+ * =========================================================================================
+ * Copyright © 2013-2016 the kamon project <http://kamon.io/>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
+ * =========================================================================================
+ */
+
 package kamon.agent.api.instrumentation.mixin;
 
 import net.bytebuddy.jar.asm.*;
-import net.bytebuddy.jar.asm.commons.RemappingMethodAdapter;
+import net.bytebuddy.jar.asm.commons.MethodRemapper;
 import net.bytebuddy.jar.asm.commons.SimpleRemapper;
 import net.bytebuddy.jar.asm.tree.ClassNode;
 import net.bytebuddy.jar.asm.tree.FieldNode;
@@ -17,11 +33,10 @@ public class MixinClassVisitor extends ClassVisitor {
     private final MixinDescription mixin;
     private final Type type;
 
-    public MixinClassVisitor(MixinDescription mixin, String className, ClassVisitor classVisitor) {
+    MixinClassVisitor(MixinDescription mixin, String className, ClassVisitor classVisitor) {
         super(Opcodes.ASM5, classVisitor);
         this.mixin = mixin;
         this.type = Type.getObjectType(className);
-
     }
 
     @Override
@@ -56,8 +71,7 @@ public class MixinClassVisitor extends ClassVisitor {
         ((List<MethodNode>) cn.methods).stream().filter(isConstructor()).forEach(mn -> {
             String[] exceptions = new String[mn.exceptions.size()];
             MethodVisitor mv = cv.visitMethod(mn.access, mn.name, mn.desc, mn.signature, exceptions);
-            mn.instructions.resetLabels();
-            mn.accept(new RemappingMethodAdapter(mn.access, mn.desc, mv, new SimpleRemapper(cn.name, type.getInternalName())));
+            mn.accept(new MethodRemapper(mv, new SimpleRemapper(cn.name, type.getInternalName())));
         });
 
         super.visitEnd();
