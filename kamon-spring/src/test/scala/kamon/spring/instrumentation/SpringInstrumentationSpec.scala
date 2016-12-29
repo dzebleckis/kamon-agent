@@ -36,7 +36,7 @@ class SpringInstrumentationSpec extends WordSpecLike with Matchers with BeforeAn
     val notFound = new HttpGet(s"http://localhost:$port/servlet-not-found")
     val error = new HttpGet(s"http://localhost:$port/servlet-error")
 
-    for (i ← 1 to 10) {
+    for (_ ← 1 to 10) {
       closeAtEnd(httpclient.execute(get)) { httpResponse: CloseableHttpResponse ⇒
         Thread.sleep(3000)
       }

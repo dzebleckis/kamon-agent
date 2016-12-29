@@ -113,7 +113,7 @@ lazy val kamonScala = (project in file("kamon-scala"))
   .settings(noPublishing: _*)
   .settings(notAggregateInAssembly: _*)
 
-lazy val kamonSpring = Project("kamon-spring",file("kamon-spring"))
+lazy val kamonSpring = (project in file("kamon-spring"))
   .dependsOn(agentScala, kamonServlet)
   .settings(basicSettings: _*)
   .settings(formatSettings: _*)
