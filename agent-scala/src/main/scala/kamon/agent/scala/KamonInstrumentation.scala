@@ -43,6 +43,10 @@ trait KamonInstrumentation extends kamon.agent.api.instrumentation.KamonInstrume
     super.forTargetType(name, builder)
   }
 
+  def annotatedWith(name: String)(builder: InstrumentationDescription.Builder ⇒ InstrumentationDescription): Unit = {
+    super.annotatedWith(name, builder)
+  }
+
   implicit class PimpInstrumentationBuilder(instrumentationBuilder: InstrumentationDescription.Builder) {
     def withTransformationFor(method: Junction[MethodDescription], delegate: Class[_]) = {
       addTransformation((builder, _, _) ⇒ builder.method(method).intercept(MethodDelegation.to(delegate)))

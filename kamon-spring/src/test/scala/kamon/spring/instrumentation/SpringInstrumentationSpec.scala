@@ -32,32 +32,32 @@ class SpringInstrumentationSpec extends WordSpecLike with Matchers with BeforeAn
 
   "should propagate the TraceContext and record http server metrics for all processed requests" in {
     val httpclient = HttpClients.createDefault()
-    val get = new HttpGet(s"http://localhost:$port/servlet-get")
-    val notFound = new HttpGet(s"http://localhost:$port/servlet-not-found")
-    val error = new HttpGet(s"http://localhost:$port/servlet-error")
+    val get = new HttpGet(s"http://localhost:$port/spring-get")
+    val notFound = new HttpGet(s"http://localhost:$port/spring-not-found")
+    val error = new HttpGet(s"http://localhost:$port/spring-error")
 
     for (_ ← 1 to 10) {
       closeAtEnd(httpclient.execute(get)) { httpResponse: CloseableHttpResponse ⇒
-        Thread.sleep(3000)
+        Thread.sleep(50)
       }
     }
 
     for (_ ← 1 to 5) {
       closeAtEnd(httpclient.execute(notFound)) { httpResponse: CloseableHttpResponse ⇒
-        Thread.sleep(3000)
+        Thread.sleep(50)
       }
       closeAtEnd(httpclient.execute(error)) { httpResponse: CloseableHttpResponse ⇒
-        Thread.sleep(3000)
+        Thread.sleep(50)
       }
     }
 
-    val getSnapshot = takeSnapshotOf("GET:/servlet-get", "trace")
+    val getSnapshot = takeSnapshotOf("GET:/spring-get", "trace")
     getSnapshot.histogram("elapsed-time").get.numberOfMeasurements should be(10)
 
     val metrics = takeSnapshotOf("servlet", "http-server")
-    metrics.counter("GET:/servlet-get_200").get.count should be(10)
-    metrics.counter("GET:/servlet-not-found_404").get.count should be(5)
-    metrics.counter("GET:/servlet-error_500").get.count should be(5)
+    metrics.counter("GET:/spring-get_200").get.count should be(10)
+    metrics.counter("GET:/spring-not-found_404").get.count should be(5)
+    metrics.counter("GET:/spring-error_500").get.count should be(5)
     metrics.counter("200").get.count should be(10)
     metrics.counter("404").get.count should be(5)
     metrics.counter("500").get.count should be(5)
@@ -108,16 +108,16 @@ class SpringInstrumentationSpec extends WordSpecLike with Matchers with BeforeAn
 @RestController
 class TestController {
 
-  @RequestMapping(value = Array("/servlet-get"), method = Array(RequestMethod.GET))
+  @RequestMapping(value = Array("/spring-get"), method = Array(RequestMethod.GET))
   def get: String = "ok response"
 
-  @RequestMapping(value = Array("/servlet-not-found"), method = Array(RequestMethod.GET))
+  @RequestMapping(value = Array("/spring-not-found"), method = Array(RequestMethod.GET))
   def getNotFound(response: HttpServletResponse): String = {
     response.setStatus(404)
     "not found response"
   }
 
-  @RequestMapping(value = Array("/servlet-error"), method = Array(RequestMethod.GET))
+  @RequestMapping(value = Array("/spring-error"), method = Array(RequestMethod.GET))
   def getError(response: HttpServletResponse): String = {
     response.setStatus(500)
     "error response"
